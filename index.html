@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function Box({ value, onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          style={{
+            width: '100px',
+            height: '100px',
+            fontSize: '2rem',
+            fontWeight: 'bold',
+            border: '1px solid black',
+            cursor: 'pointer',
+            backgroundColor: 'white'
+          }}
+        >
+          {value}
+        </button>
+      );
+    }
+
+    function Row({ row, rowIndex, onBoxClick }) {
+      return (
+        <div style={{ display: 'flex' }}>
+          {row.map((value, colIndex) => (
+            <Box
+              key={colIndex}
+              value={value}
+              onClick={() => onBoxClick(rowIndex, colIndex)}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    function Board() {
+      const [board, setBoard] = useState([
+        ['-', '-', '-'],
+        ['-', '-', '-'],
+        ['-', '-', '-']
+      ]);
+
+      const handleBoxClick = (rowIndex, colIndex) => {
+        setBoard((prevBoard) => {
+          const newBoard = prevBoard.map((row) => [...row]);
+
+          if (newBoard[rowIndex][colIndex] === '-') {
+            newBoard[rowIndex][colIndex] = 'X';
+          } else if (newBoard[rowIndex][colIndex] === 'X') {
+            newBoard[rowIndex][colIndex] = 'O';
+          } else {
+            newBoard[rowIndex][colIndex] = 'X';
+          }
+
+          return newBoard;
+        });
+      };
+
+      return (
+        <div>
+          <h1>Tic-Tac-Toe</h1>
+          {board.map((row, rowIndex) => (
+            <Row
+              key={rowIndex}
+              row={row}
+              rowIndex={rowIndex}
+              onBoxClick={handleBoxClick}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    function App() {
+      return <Board />;
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
