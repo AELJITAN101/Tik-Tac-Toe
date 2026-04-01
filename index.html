@@ -4,6 +4,99 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tic-Tac-Toe</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b1020;
+      color: #eaf0ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+      text-align: center;
+      width: min(420px, 95vw);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+      letter-spacing: 1px;
+    }
+
+    .status {
+      margin: 12px 0 16px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .board {
+      position: relative;
+      width: 300px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+    }
+
+    .square {
+      width: 100px;
+      height: 100px;
+      font-size: 48px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.03);
+      color: #eaf0ff;
+      cursor: pointer;
+    }
+
+    .square:disabled {
+      cursor: default;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .square.highlight {
+      background: rgba(255, 196, 0, 0.16);
+    }
+
+    .win-line {
+      position: absolute;
+      background: #ff3b3b;
+      border-radius: 999px;
+    }
+
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    button.play {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 0;
+      background: #3b82f6;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.play:hover {
+      filter: brightness(1.05);
+    }
+
+    button.play:active {
+      transform: translateY(1px);
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -15,83 +108,121 @@
   <script type="text/babel">
     const { useState } = React;
 
-    function Box({ value, onClick }) {
+    const WIN_LINES = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    const WIN_LINE_STYLE = {
+      row0: { top: 50, left: 0, width: 300, height: 6 },
+      row1: { top: 150, left: 0, width: 300, height: 6 },
+      row2: { top: 250, left: 0, width: 300, height: 6 },
+      col0: { left: 50, top: 0, width: 6, height: 300 },
+      col1: { left: 150, top: 0, width: 6, height: 300 },
+      col2: { left: 250, top: 0, width: 6, height: 300 },
+      diag0: { top: 0, left: -60, width: 420, height: 6, transform: 'rotate(45deg)' },
+      diag1: { top: 0, left: -60, width: 420, height: 6, transform: 'rotate(-45deg)' }
+    };
+
+    function calculateWinner(squares) {
+      for (let i = 0; i < WIN_LINES.length; i++) {
+        const [a, b, c] = WIN_LINES[i];
+        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+          let key;
+          if ([0, 1, 2].includes(i)) key = `row${i}`;
+          else if ([3, 4, 5].includes(i)) key = `col${i - 3}`;
+          else key = i === 6 ? 'diag0' : 'diag1';
+
+          return { winner: squares[a], winSquares: [a, b, c], winKey: key };
+        }
+      }
+      return null;
+    }
+
+    function Square({ value, onClick, highlight, disabled }) {
       return (
         <button
+          className={
+            'square' +
+            (highlight ? ' highlight' : '')
+          }
           onClick={onClick}
-          style={{
-            width: '100px',
-            height: '100px',
-            fontSize: '2rem',
-            fontWeight: 'bold',
-            border: '1px solid black',
-            cursor: 'pointer',
-            backgroundColor: 'white'
-          }}
+          disabled={disabled}
         >
-          {value}
+          {value ?? ''}
         </button>
       );
     }
 
-    function Row({ row, rowIndex, onBoxClick }) {
+    function Game() {
+      const [squares, setSquares] = useState(Array(9).fill(null));
+      const [xIsNext, setXIsNext] = useState(true);
+
+      const result = calculateWinner(squares);
+      const hasWinner = !!result;
+      const isDraw = !hasWinner && squares.every(Boolean);
+
+      const status = hasWinner
+        ? result.winner === 'X'
+          ? 'Player 1 wins!'
+          : 'Player 2 wins!'
+        : isDraw
+        ? 'Draw! No moves left.'
+        : `Next turn: ${xIsNext ? 'Player 1 (X)' : 'Player 2 (O)'}`;
+
+      const winSquares = hasWinner ? result.winSquares : [];
+
+      function handleClick(i) {
+        if (hasWinner || isDraw) return;
+        if (squares[i]) return;
+
+        const next = squares.slice();
+        next[i] = xIsNext ? 'X' : 'O';
+
+        setSquares(next);
+        setXIsNext(!xIsNext);
+      }
+
+      function reset() {
+        setSquares(Array(9).fill(null));
+        setXIsNext(true);
+      }
+
+      const winLineStyle = hasWinner ? WIN_LINE_STYLE[result.winKey] : null;
+
       return (
-        <div style={{ display: 'flex' }}>
-          {row.map((value, colIndex) => (
-            <Box
-              key={colIndex}
-              value={value}
-              onClick={() => onBoxClick(rowIndex, colIndex)}
-            />
-          ))}
-        </div>
-      );
-    }
-
-    function Board() {
-      const [board, setBoard] = useState([
-        ['-', '-', '-'],
-        ['-', '-', '-'],
-        ['-', '-', '-']
-      ]);
-
-      const handleBoxClick = (rowIndex, colIndex) => {
-        setBoard((prevBoard) => {
-          const newBoard = prevBoard.map((row) => [...row]);
-
-          if (newBoard[rowIndex][colIndex] === '-') {
-            newBoard[rowIndex][colIndex] = 'X';
-          } else if (newBoard[rowIndex][colIndex] === 'X') {
-            newBoard[rowIndex][colIndex] = 'O';
-          } else {
-            newBoard[rowIndex][colIndex] = 'X';
-          }
-
-          return newBoard;
-        });
-      };
-
-      return (
-        <div>
+        <div className="card">
           <h1>Tic-Tac-Toe</h1>
-          {board.map((row, rowIndex) => (
-            <Row
-              key={rowIndex}
-              row={row}
-              rowIndex={rowIndex}
-              onBoxClick={handleBoxClick}
-            />
-          ))}
+          <div className="status">{status}</div>
+          <div className="board">
+            {squares.map((sq, idx) => (
+              <Square
+                key={idx}
+                value={sq}
+                onClick={() => handleClick(idx)}
+                highlight={winSquares.includes(idx)}
+                disabled={hasWinner || isDraw}
+              />
+            ))}
+            {winLineStyle && <div className="win-line" style={winLineStyle} />}
+          </div>
+          <div className="controls">
+            <button className="play" onClick={reset}>
+              Play again
+            </button>
+          </div>
         </div>
       );
-    }
-
-    function App() {
-      return <Board />;
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(<Game />);
   </script>
 </body>
 </html>
